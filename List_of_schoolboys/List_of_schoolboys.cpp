@@ -141,6 +141,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	static int listItem = NULL;
 	static PTCHAR textBuf = (PTCHAR)GlobalAlloc(GPTR, 50000 * sizeof(TCHAR));     //Буфер
 	Editboxes editBoxesInDialog = { "", "", 0, 0 };      //Структура, в которой хранятся поля ввода диалогового окна
+	HANDLE hFile;
+	static DWORD dwByte = 0;
 
 	switch (message)
 	{
@@ -191,6 +193,44 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					listOfSchoolboys.erase(listOfSchoolboys.begin() + listItem);
 					SendMessage(hListBox, LB_DELETESTRING, (WPARAM)listItem, 0);
+				}
+				break;
+			case IDM_SAVE:
+				hFile = CreateFile("proba.zzz", GENERIC_WRITE,
+					FILE_SHARE_READ,
+					NULL, CREATE_ALWAYS,
+					FILE_ATTRIBUTE_NORMAL, NULL);
+				if (hFile == INVALID_HANDLE_VALUE)
+				{
+					MessageBox(hWnd, "Ошибка при записи файла", "Возникла ошибка", MB_OK);
+					return 0;
+				}
+				WriteFile(hFile,
+						&listOfSchoolboys, sizeof
+						(listOfSchoolboys),
+						&dwByte, NULL);
+				SetEndOfFile(hFile);
+				CloseHandle(hFile);
+				break;
+			case IDM_OPEN:
+				hFile = CreateFile
+				("proba.zzz", GENERIC_READ, FILE_SHARE_READ,
+					NULL, OPEN_EXISTING,
+					FILE_ATTRIBUTE_NORMAL, NULL);
+				if (hFile == INVALID_HANDLE_VALUE)
+				{
+					MessageBox(hWnd, "Ошибка при открытии файла", "Возникла ошибка", MB_OK);
+					return 0;
+				}
+				SetFilePointer
+					(hFile, 0, 0, FILE_BEGIN);
+				ReadFile(hFile, &listOfSchoolboys, sizeof(listOfSchoolboys), &dwByte, NULL);
+				CloseHandle(hFile);
+				SendMessage(hListBox, LB_RESETCONTENT, 0, 0);
+				for (size_t i = 0; i < listOfSchoolboys.size(); i++)
+				{
+					SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(listOfSchoolboys[i].surname + " " +
+						listOfSchoolboys[i].name).c_str());
 				}
 				break;
 			case IDM_EXIT:
@@ -287,6 +327,15 @@ INT_PTR CALLBACK schoolboyAdd(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 					MessageBox(NULL, "Пожалуйста, заполните все поля!", "Ошибка", MB_ICONASTERISK | MB_OK);
 					strcpy(pEditboxes->edit_box1, "");       //По этому элементу основная программа поймет, что
 					                                          //в диалоговом окне нажато "Cancel"
+					break;
+				}
+				if (atoi(pEditboxes->edit_box4) < 1 ||
+					atoi(pEditboxes->edit_box4) > 5 ||
+					_tcslen (pEditboxes->edit_box4) > 1)
+				{
+					MessageBox(NULL, "Средний балл должен быть целым числом в диапазоне от 1 до 5", "Ошибка", MB_ICONASTERISK | MB_OK);
+					strcpy(pEditboxes->edit_box1, "");       //По этому элементу основная программа поймет, что
+															  //в диалоговом окне нажато "Cancel"
 					break;
 				}
 			}
