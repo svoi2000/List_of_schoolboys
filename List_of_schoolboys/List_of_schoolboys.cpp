@@ -134,7 +134,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static HWND hListBox;
 	RECT rectPlace;
-	TCHAR workTime[10];
+	TCHAR workTime[30];
 	PAINTSTRUCT ps;
 	HDC hdc;
 	static std::vector<Schoolboy> listOfSchoolboys;
@@ -143,25 +143,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	Editboxes editBoxesInDialog = { "", "", 0, 0 };      //Структура, в которой хранятся поля ввода диалогового окна
 	HANDLE hFile;
 	static DWORD dwByte = 0;
+	TCHAR separator[] = ":";         // разделитель данных в файле
+	std::string temp_name, temp_surname;
 
 	switch (message)
 	{
 	case WM_CREATE:
 	    {
-		    //Заполним наш список школьниками
-		    listOfSchoolboys.push_back(Schoolboy("Вася", "Пупкин", 8, 2));
-		    listOfSchoolboys.push_back(Schoolboy("Иван", "Петров", 9, 3));
-		    listOfSchoolboys.push_back(Schoolboy("Арнольд", "Шварценеггер", 13, 4));
-			std::sort(listOfSchoolboys.begin(), listOfSchoolboys.end());
-		    MessageBox(NULL, "На экран выводится список школьников", "Начало работы", MB_ICONASTERISK | MB_OK);
+		    //Вывод рамки списка школьников
+		    MessageBox(NULL, "Программа для работы со списком школьников", "Начало работы", MB_ICONASTERISK | MB_OK);
 			GetClientRect(hWnd, &rectPlace);
 			hListBox = CreateWindow("Listbox", NULL, WS_CHILD | WS_VISIBLE | LBS_STANDARD,
-				rectPlace.left + 50, rectPlace.top + 50, 200, 150, hWnd, (HMENU)ID_LISTBOX, hInst, NULL);
-			for (size_t i = 0; i < listOfSchoolboys.size(); i++)
-			{
-				SendMessage(hListBox, LB_ADDSTRING, 0, (LPARAM)(listOfSchoolboys[i].surname + " " +
-					listOfSchoolboys[i].name).c_str());
-			}
+				rectPlace.left + 50, rectPlace.top + 150, 900, 150, hWnd, (HMENU)ID_LISTBOX, hInst, NULL);
 		}
 	
     case WM_COMMAND:
@@ -195,7 +188,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					SendMessage(hListBox, LB_DELETESTRING, (WPARAM)listItem, 0);
 				}
 				break;
-			case IDM_SAVE:
+			case IDM_SAVE:                          //Сохранение списка школьников в файле
+				
 				hFile = CreateFile("proba.zzz", GENERIC_WRITE,
 					FILE_SHARE_READ,
 					NULL, CREATE_ALWAYS,
@@ -205,14 +199,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					MessageBox(hWnd, "Ошибка при записи файла", "Возникла ошибка", MB_OK);
 					return 0;
 				}
-				WriteFile(hFile,
-						&listOfSchoolboys, sizeof
-						(listOfSchoolboys),
+				for (size_t i = 0; i < listOfSchoolboys.size(); i++)
+				{
+					WriteFile(hFile,
+						listOfSchoolboys[i].name.c_str(), listOfSchoolboys[i].name.length(),
 						&dwByte, NULL);
+					WriteFile(hFile, separator, 1, &dwByte, NULL);
+					WriteFile(hFile,
+						listOfSchoolboys[i].surname.c_str(), listOfSchoolboys[i].surname.length(),
+						&dwByte, NULL);
+					WriteFile(hFile, separator, 1, &dwByte, NULL);
+					WriteFile(hFile,
+						_itoa(listOfSchoolboys[i].age, textBuf, 10), sizeof(textBuf),
+						&dwByte, NULL);
+					WriteFile(hFile, separator, 1, &dwByte, NULL);
+					WriteFile(hFile,
+						_itoa(listOfSchoolboys[i].ball, textBuf, 10), sizeof(textBuf),
+						&dwByte, NULL);
+					WriteFile(hFile, separator, 1, &dwByte, NULL);
+				}
 				SetEndOfFile(hFile);
 				CloseHandle(hFile);
 				break;
-			case IDM_OPEN:
+			case IDM_OPEN:                                  //Открытие файла со списком школьников
 				hFile = CreateFile
 				("proba.zzz", GENERIC_READ, FILE_SHARE_READ,
 					NULL, OPEN_EXISTING,
@@ -224,8 +233,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				SetFilePointer
 					(hFile, 0, 0, FILE_BEGIN);
-				ReadFile(hFile, &listOfSchoolboys, sizeof(listOfSchoolboys), &dwByte, NULL);
+				listOfSchoolboys.clear();
+				listOfSchoolboys.resize(0);
+				while (ReadFile(hFile, textBuf, 1, &dwByte, NULL) && dwByte != 0)
+				{
+					do
+					{
+						temp_name = temp_name + (std::string)(textBuf);
+						ReadFile(hFile, textBuf, 1, &dwByte, NULL);
+					} while ((std::string)textBuf != ":");
+					ReadFile(hFile, textBuf, 1, &dwByte, NULL);
+					do
+					{
+						temp_surname = temp_surname + (std::string)(textBuf);
+						ReadFile(hFile, textBuf, 1, &dwByte, NULL);
+					} while ((std::string)textBuf != ":");
+					ReadFile(hFile, textBuf, 4, &dwByte, NULL);
+					int temp_age = atoi(textBuf);
+					ReadFile(hFile, textBuf, 1, &dwByte, NULL);      //перевод через символ :
+					ReadFile(hFile, textBuf, 4, &dwByte, NULL);
+					int temp_ball = atoi(textBuf);
+					ReadFile(hFile, textBuf, 1, &dwByte, NULL);      //перевод через символ :
+					listOfSchoolboys.push_back(Schoolboy(temp_name, temp_surname, temp_age, temp_ball));
+					temp_name = "";
+					temp_surname = "";
+				}
 				CloseHandle(hFile);
+				std::sort(listOfSchoolboys.begin(), listOfSchoolboys.end());
 				SendMessage(hListBox, LB_RESETCONTENT, 0, 0);
 				for (size_t i = 0; i < listOfSchoolboys.size(); i++)
 				{

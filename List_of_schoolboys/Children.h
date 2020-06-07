@@ -7,10 +7,11 @@ class Children
 {
 protected:
 	/* список свойств и методов для использования внутри класса */
-	int age;
+	
 
 public:
 	std::string name, surname;
+	int age;
 	/* список методов доступных другим функциям и объектам программы */
 	Children();
 	Children(const Children&);
