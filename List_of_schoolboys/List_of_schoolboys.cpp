@@ -356,10 +356,10 @@ INT_PTR CALLBACK schoolboyAdd(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 					break;
 				}
 				if (atoi(pEditboxes->edit_box3) < 5 ||
-					atoi(pEditboxes->edit_box3) > 120 ||
-					_tcslen(pEditboxes->edit_box3) > 1)
+					atoi(pEditboxes->edit_box3) > 90 ||
+					_tcslen(pEditboxes->edit_box3) > 2)
 				{
-					MessageBox(NULL, "Возраст школьника должен быть целым числом в диапазоне от 5 до 120",
+					MessageBox(NULL, "Возраст школьника должен быть целым числом в диапазоне от 5 до 90",
 						"Ошибка", MB_ICONERROR | MB_OK);
 					strcpy(pEditboxes->edit_box1, "");       //По этому элементу основная программа поймет, что
 															  //в диалоговом окне нажато "Cancel"
