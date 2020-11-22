@@ -138,6 +138,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	TCHAR workTime[30];
 	PAINTSTRUCT ps;
 	HDC hdc;
+	HFONT hFont;
+	COLORREF colorText = RGB(0, 0, 0);					// задаём цвет текста
+	TCHAR mainMessage[] = "Список школьников";			// строка с заголовком для вывода на экран
 	static std::vector<Schoolboy> listOfSchoolboys;
 	static int listItem = NULL;
 	static PTCHAR textBuf = (PTCHAR)GlobalAlloc(GPTR, 50000 * sizeof(TCHAR));     //Буфер
@@ -153,11 +156,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_CREATE:
 	    {
-		    //Вывод рамки списка школьников
-		    MessageBox(NULL, "Программа для работы со списком школьников", "Начало работы", MB_ICONASTERISK | MB_OK);
+			//Вывод рамки списка школьников
 			GetClientRect(hWnd, &rectPlace);
 			hListBox = CreateWindow("Listbox", NULL, WS_CHILD | WS_VISIBLE | LBS_STANDARD,
-				rectPlace.left + 50, rectPlace.top + 150, 900, 150, hWnd, (HMENU)ID_LISTBOX, hInst, NULL);
+				rectPlace.left + 200, rectPlace.top + 100, rectPlace.right-rectPlace.left-400,
+				rectPlace.bottom-rectPlace.top-200, hWnd, (HMENU)ID_LISTBOX, hInst, NULL);
 		}
 	
     case WM_COMMAND:
@@ -208,6 +211,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			case IDM_OPEN:											//Открытие файла со списком школьников
 				fin.open("list.dat");
+				if (!fin.is_open()) 
+				{
+					MessageBox(NULL, "Файл не может быть открыт!", "Ошибка при открытии файла", MB_ICONERROR | MB_OK);
+					break;
+				}
 				listOfSchoolboys.clear();
 				listOfSchoolboys.resize(0);
 				while (!fin.eof())
@@ -265,11 +273,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_PAINT:
         {
-            
-            hdc = BeginPaint(hWnd, &ps);
+		    hdc = BeginPaint(hWnd, &ps);
             // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
+			//Вывод строки заголовка
+			GetClientRect(hWnd, &rectPlace);
+			SetTextColor(hdc, colorText);
+			hFont = CreateFont(50, 0, 0, 0, 0, 0, 0, 0,
+				DEFAULT_CHARSET,
+				0, 0, 0, VARIABLE_PITCH,
+				"Arial Bold");
+			SelectObject(hdc, hFont);
+			DrawText(hdc,
+				mainMessage,
+				-1, &rectPlace,
+				DT_SINGLELINE | DT_CENTER);
+			EndPaint(hWnd, &ps);
 			
-            EndPaint(hWnd, &ps);
         }
         break;
 	case WM_DESTROY:
@@ -331,16 +350,26 @@ INT_PTR CALLBACK schoolboyAdd(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 					strcmp(pEditboxes->edit_box3, "") == 0 ||
 					strcmp(pEditboxes->edit_box4, "") == 0)
 				{
-					MessageBox(NULL, "Пожалуйста, заполните все поля!", "Ошибка", MB_ICONASTERISK | MB_OK);
+					MessageBox(NULL, "Пожалуйста, заполните все поля!", "Ошибка", MB_ICONERROR | MB_OK);
 					strcpy(pEditboxes->edit_box1, "");       //По этому элементу основная программа поймет, что
 					                                          //в диалоговом окне нажато "Cancel"
+					break;
+				}
+				if (atoi(pEditboxes->edit_box3) < 5 ||
+					atoi(pEditboxes->edit_box3) > 120 ||
+					_tcslen(pEditboxes->edit_box3) > 1)
+				{
+					MessageBox(NULL, "Возраст школьника должен быть целым числом в диапазоне от 5 до 120",
+						"Ошибка", MB_ICONERROR | MB_OK);
+					strcpy(pEditboxes->edit_box1, "");       //По этому элементу основная программа поймет, что
+															  //в диалоговом окне нажато "Cancel"
 					break;
 				}
 				if (atoi(pEditboxes->edit_box4) < 1 ||
 					atoi(pEditboxes->edit_box4) > 5 ||
 					_tcslen (pEditboxes->edit_box4) > 1)
 				{
-					MessageBox(NULL, "Средний балл должен быть целым числом в диапазоне от 1 до 5", "Ошибка", MB_ICONASTERISK | MB_OK);
+					MessageBox(NULL, "Средний балл должен быть целым числом в диапазоне от 1 до 5", "Ошибка", MB_ICONERROR | MB_OK);
 					strcpy(pEditboxes->edit_box1, "");       //По этому элементу основная программа поймет, что
 															  //в диалоговом окне нажато "Cancel"
 					break;
