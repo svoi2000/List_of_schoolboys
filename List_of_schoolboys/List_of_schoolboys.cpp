@@ -156,7 +156,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_CREATE:
 	    {
-			//Вывод рамки списка школьников
+			//Создание списка школьников
 			GetClientRect(hWnd, &rectPlace);
 			hListBox = CreateWindow("Listbox", NULL, WS_CHILD | WS_VISIBLE | LBS_STANDARD,
 				rectPlace.left + 200, rectPlace.top + 100, rectPlace.right-rectPlace.left-400,
